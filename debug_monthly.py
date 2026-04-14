@@ -1,0 +1,15 @@
+import pandas as pd
+from pathlib import Path
+path = Path('sample_expenses.csv')
+print('CSV path:', path.resolve())
+df = pd.read_csv(path)
+print('Columns:', df.columns.tolist())
+df['date'] = pd.to_datetime(df['date'], errors='coerce')
+df['amount'] = pd.to_numeric(df['amount'], errors='coerce')
+print('Parsed dates:', df['date'].head().tolist())
+print('Parsed amounts:', df['amount'].head().tolist())
+exp = df[df['amount'] > 0].copy()
+print('Expense rows:', len(exp))
+exp['month'] = exp['date'].dt.to_period('M').astype(str)
+print(exp[['date','amount','month']].head())
+print(exp.groupby('month')['amount'].sum())

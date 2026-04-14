@@ -1,0 +1,21 @@
+date,description,amount,category
+2023-01-01,Grocery shopping,1500,Food
+2023-01-02,Salary,-30000,Income
+2023-01-03,Restaurant dinner,750,Food
+2023-01-05,Gas station,450,Transportation
+2023-01-07,Online shopping,2000,Shopping
+2023-01-10,Freelance payment,-5000,Income
+2023-01-12,Coffee shop,125,Food
+2023-01-15,Electricity bill,1200,Utilities
+2023-01-20,Movie tickets,300,Entertainment
+2023-01-25,Pharmacy,650,Health
+2023-02-01,Grocery shopping,1400,Food
+2023-02-02,Salary,-30000,Income
+2023-02-05,Gas station,500,Transportation
+2023-02-10,Clothing store,1800,Shopping
+2023-02-15,Internet bill,800,Utilities
+2023-02-20,Concert tickets,1000,Entertainment
+2023-03-01,Grocery shopping,1600,Food
+2023-03-02,Salary,-30000,Income
+2023-03-10,Vacation booking,5000,Travel
+2023-03-15,Restaurant dinner,900,Food

@@ -1,0 +1,11 @@
+date,description,amount,category
+2026-04-01,Swiggy,250,Food
+2026-04-02,Uber,180,Transport
+2026-04-03,Amazon,1200,Shopping
+2026-04-04,Salary,-50000,Income
+2026-04-05,Zomato,300,Food
+2026-04-06,Petrol,1500,Transport
+2026-04-07,Flipkart,2200,Shopping
+2026-04-08,Electricity Bill,900,Bills
+2026-04-09,Netflix,500,Entertainment
+2026-04-10,Freelance,-10000,Income
