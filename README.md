@@ -57,6 +57,43 @@ docker build -t expense-analyzer .
 docker run -p 8501:8501 expense-analyzer
 ```
 
+## AWS Deployment
+
+This repo now includes deployment support for:
+
+- `EC2` to run the Streamlit app
+- `S3` to archive uploaded CSV files and generated insight reports
+
+Files added for AWS deployment:
+
+- `deploy/AWS-DEPLOYMENT.md`
+- `deploy/EC2-LAUNCH-CHECKLIST.md`
+- `deploy/ec2-bootstrap.sh`
+- `deploy/expense-analyzer.env.example`
+- `deploy/expense-analyzer.service`
+- `deploy/iam-policy-s3-template.json`
+- `deploy/nginx-expense-analyzer.conf`
+- `.streamlit/config.toml`
+
+### S3 Archiving Configuration
+
+The application supports optional S3 archiving through environment variables:
+
+```bash
+ENABLE_S3_ARCHIVE=true
+S3_BUCKET_NAME=your-bucket-name
+AWS_REGION=ap-south-1
+S3_UPLOAD_PREFIX=uploads
+S3_REPORT_PREFIX=reports
+```
+
+When enabled, the app uploads:
+
+- the original CSV file the user uploads
+- the generated insights report text file
+
+Use an EC2 IAM role with S3 permissions instead of hardcoding AWS keys.
+
 ## Sample Data
 
 Use `sample_expenses.csv` to test the application with sample rupee-based expenses.

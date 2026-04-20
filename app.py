@@ -1,6 +1,11 @@
-import streamlit as st
+import os
+from datetime import datetime, timezone
+
+import boto3
 import pandas as pd
 import plotly.express as px
+import streamlit as st
+from botocore.exceptions import BotoCoreError, ClientError
 
 st.set_page_config(
     page_title="Smart Expense Analyzer",
@@ -47,6 +52,44 @@ def format_inr(amount: float) -> str:
     return f"₹{rounded:,.0f}"
 
 
+def get_s3_settings() -> dict:
+    return {
+        "enabled": os.getenv("ENABLE_S3_ARCHIVE", "false").lower() == "true",
+        "bucket": os.getenv("S3_BUCKET_NAME", "").strip(),
+        "region": os.getenv("AWS_REGION", "").strip() or None,
+        "upload_prefix": os.getenv("S3_UPLOAD_PREFIX", "uploads").strip("/") or "uploads",
+        "report_prefix": os.getenv("S3_REPORT_PREFIX", "reports").strip("/") or "reports",
+    }
+
+
+@st.cache_resource
+def get_s3_client(region_name: str | None):
+    return boto3.client("s3", region_name=region_name)
+
+
+def upload_bytes_to_s3(file_bytes: bytes, object_name: str, prefix: str, content_type: str) -> tuple[bool, str]:
+    settings = get_s3_settings()
+    if not settings["enabled"]:
+        return False, "S3 archiving is disabled."
+    if not settings["bucket"]:
+        return False, "S3_BUCKET_NAME is not configured."
+
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    object_key = f"{prefix}/{timestamp}-{object_name}"
+
+    try:
+        client = get_s3_client(settings["region"])
+        client.put_object(
+            Bucket=settings["bucket"],
+            Key=object_key,
+            Body=file_bytes,
+            ContentType=content_type,
+        )
+        return True, object_key
+    except (BotoCoreError, ClientError) as exc:
+        return False, str(exc)
+
+
 def infer_category(description: str) -> str:
     text = str(description).lower()
     for keyword, category in category_keywords.items():
@@ -63,9 +106,17 @@ with st.sidebar:
         "`date,description,amount,category`  \nAmount positive = expense, negative = income"
     )
     st.markdown("**Example:** `2023-01-01,Groceries,1200,Food`")
+    s3_settings = get_s3_settings()
+    if s3_settings["enabled"]:
+        st.markdown("---")
+        st.markdown("**AWS archiving**")
+        st.caption(
+            f"Files and reports will be copied to s3://{s3_settings['bucket'] or 'configure-bucket-name'}"
+        )
 
 if uploaded_file is not None:
     try:
+        uploaded_file_bytes = uploaded_file.getvalue()
         df = pd.read_csv(uploaded_file)
         required_cols = ["date", "description", "amount", "category"]
         if not all(col in df.columns for col in required_cols):
@@ -184,7 +235,7 @@ if uploaded_file is not None:
         if len(monthly_exp) > 1:
             first_value = float(monthly_exp.iloc[0]["amount"])
             last_value = float(monthly_exp.iloc[-1]["amount"])
-            if last_value > first_value:
+            if first_value != 0 and last_value > first_value:
                 increase_pct = (last_value - first_value) / first_value * 100
                 insights.append(f"📈 Expenses rose by {increase_pct:.1f}% from first to last month.")
             else:
@@ -192,6 +243,20 @@ if uploaded_file is not None:
 
         for insight in insights:
             st.write(insight)
+
+        if s3_settings["enabled"]:
+            st.markdown("---")
+            st.subheader("AWS Archive")
+            upload_ok, upload_result = upload_bytes_to_s3(
+                file_bytes=uploaded_file_bytes,
+                object_name=uploaded_file.name,
+                prefix=s3_settings["upload_prefix"],
+                content_type="text/csv",
+            )
+            if upload_ok:
+                st.success(f"Uploaded source CSV to s3://{s3_settings['bucket']}/{upload_result}")
+            else:
+                st.warning(f"CSV archive skipped: {upload_result}")
 
         st.markdown("---")
         st.subheader("Expense Health Score")
@@ -212,12 +277,24 @@ if uploaded_file is not None:
             message_col.error("Financial health is weak. Cut big spending and improve savings.")
 
         if insights:
+            report_text = "\n".join(insights)
             st.download_button(
                 label="Download Insights Report",
-                data="\n".join(insights),
+                data=report_text,
                 file_name="expense_insights.txt",
                 mime="text/plain",
             )
+            if s3_settings["enabled"]:
+                report_ok, report_result = upload_bytes_to_s3(
+                    file_bytes=report_text.encode("utf-8"),
+                    object_name="expense_insights.txt",
+                    prefix=s3_settings["report_prefix"],
+                    content_type="text/plain",
+                )
+                if report_ok:
+                    st.success(f"Uploaded insights report to s3://{s3_settings['bucket']}/{report_result}")
+                else:
+                    st.warning(f"Report archive skipped: {report_result}")
 
     except Exception as e:
         st.error(f"Error processing file: {str(e)}")
