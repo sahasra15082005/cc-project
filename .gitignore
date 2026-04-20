@@ -20,3 +20,7 @@ coverage.xml
 .mypy_cache
 .pytest_cache
 .hypothesis
+expense-analyzer-key.pem
+s3-encryption.json
+deploy/iam-policy-s3.json
+deploy/trust-policy.json
