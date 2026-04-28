@@ -32,7 +32,7 @@ A web application built with Python and Streamlit that analyzes financial transa
    streamlit run app.py
    ```
 
-2. Open your browser to `http://localhost:8501`
+2. Open your browser to `[http://localhost:8501](http://13.201.118.163/)`
 
 3. Upload a CSV file with the following format:
    - Columns: `date`, `description`, `amount`, `category`
